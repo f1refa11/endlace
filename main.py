@@ -1,7 +1,10 @@
+from ntpath import join
 import pygame
 from pygame.locals import *
 import os
 import sys
+
+from pygame.transform import scale
 
 pygame.init()
 pygame.mixer.init()
@@ -20,11 +23,15 @@ resourcesPath = os.path.join(rootPath, "resources")
 texturesPath = os.path.join(resourcesPath, "textures")
 playerPath = os.path.join(texturesPath, "player")
 skinsPath = os.path.join(playerPath, "skins")
+defaultIdle = os.path.join(skinsPath, "default-idle")
+defaultRun = os.path.join(skinsPath, "default-run")
 
 ### Настраиваем пути текстур ###
 ground512 = pygame.image.load(os.path.join(texturesPath, "ground512x512.png"))
 box = pygame.image.load(os.path.join(texturesPath, "normalbox.png"))
 box = pygame.transform.scale(box, (64, 64))
+playerShadow = pygame.image.load(os.path.join(playerPath, "shadow.png"))
+playerShadow = pygame.transform.scale(playerShadow, (64,64))
 boxSprite = pygame.sprite.Sprite()
 boxSprite.image = box
 boxSprite.rect = box.get_rect()
@@ -39,14 +46,53 @@ testSurface = pygame.Surface((512,512))
 screenScrollX = 0
 screenScrollY = 0
 
+frameCount = 0
+
+mapList = [[[0,0,0,0,0,0,0,0], #layer 1
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0]],
+			   
+		   [[0,0,0,0,0,0,0,0], #layer 2
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0]],
+			   
+		   [[0,0,0,0,0,0,0,0], #layer 3
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0]],
+			   
+		   [[0,0,0,0,0,0,0,0], #layer 4
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0],
+		   	[0,0,0,0,0,0,0,0]],]
+
 ### Классы ###
 class Player(pygame.sprite.Sprite):
 	def __init__(self):
 		pygame.sprite.Sprite.__init__(self)
-		self.image = pygame.image.load(os.path.join(skinsPath, "default-1.png"))
+		self.image = pygame.image.load(os.path.join(defaultIdle, "frame1.png"))
 		self.image = pygame.transform.scale(self.image, (64, 64))
 		self.rect = self.image.get_rect()
 		self.rect.center = (128,128)
+
 
 	def moveRight(self):
 		global screenScrollX
@@ -127,6 +173,7 @@ def mainMenu():
 
 def sandbox():
 	global motion
+	global frameCount
 	while True:
 		clock.tick(60)
 		
@@ -142,23 +189,46 @@ def sandbox():
 				motion = "stop"
 			elif event.type == pygame.MOUSEBUTTONDOWN:
 				if event.button == 1:
-					if grid1.collidepoint(event.pos):
-						boxSprite = pygame.sprite.Sprite()
-						boxSprite.image = box
-						boxSprite.rect = box.get_rect()
-						boxSprite.rect.x = 0
-						boxSprite.rect.y = 0
-						allSprites.add(boxSprite)
-					else:
-						boxSprite = pygame.sprite.Sprite()
-						boxSprite.image = box
-						boxSprite.rect = box.get_rect()
-						boxSprite.rect.x = (posX//64)*64
-						boxSprite.rect.y = (posY//64)*64
-						allSprites.add(boxSprite)
+					boxSprite = pygame.sprite.Sprite()
+					boxSprite.image = box
+					boxSprite.rect = box.get_rect()
+					print(int(posX/64))
+					print(int(posY/64))
+					clickX = int(posX/64)
+					clickY = int(posY/64)
+					# if mapList[0][clickX][clickY] == 1:
+					# 	mapList[1][clickX][clickY] = 1
+					# 	boxSprite.rect.x = (posX//64)*64
+					# 	boxSprite.rect.y = (posY//64)*64-28
+					# 	print(mapList)
+					# 	allSprites.add(boxSprite)
+					# elif mapList[1][clickX][clickY] == 1:
+					# 	mapList[2][clickX][clickY] = 1
+					# 	boxSprite.rect.x = (posX//64)*64-58
+					# 	print(mapList)
+					# 	allSprites.add(boxSprite)
+					# elif mapList[2][clickX][clickY] == 1:
+					# 	mapList[3][clickX][clickY] = 1
+					# 	boxSprite.rect.x = (posX//64)*64-678
+					# 	print(mapList)
+					# 	allSprites.add(boxSprite)
+					# else:
+					# 	mapList[0][clickX][clickY] = 1
+					# 	boxSprite.rect.x = (posX//64)*64
+					# 	boxSprite.rect.y = (posY//64)*64
+					# 	print(mapList)
+					# 	allSprites.add(boxSprite)
+					mapList[0][clickX][clickY] = 1
+					boxSprite.rect.x = (posX//64)*64
+					boxSprite.rect.y = (posY//64)*64
+					# print(mapList)
+					allSprites.add(boxSprite)
 				
 		keys = pygame.key.get_pressed()
 		
+		if frameCount + 1 >= 27:
+			frameCount = 0
+
 		#moving
 		if keys[pygame.K_LEFT] or keys[pygame.K_a]:
 			motion = "left"
@@ -179,12 +249,19 @@ def sandbox():
 
 		if motion == "left":
 			player.moveLeft()
+			# fakeScreen.blit(player.images[frameCount//3], (player.rect.x,player.rect.y))
+			# frameCount += 1
 		if motion == "right":
 			player.moveRight()
+			# fakeScreen.blit(player.images[frameCount//3], (player.rect.x,player.rect.y))
+			# frameCount += 1
 		if motion == "up":
 			player.moveUp()
+			# fakeScreen.blit(player.images[frameCount//3], (player.rect.x,player.rect.y))
+			# frameCount += 1
 		if motion == "down":
 			player.moveDown()
+			# fakeScreen.blit(player.images[frameCount//3], (player.rect.x,player.rect.y))
 
 		if motion == "leftup":
 			player.moveLeftUp()
@@ -195,8 +272,12 @@ def sandbox():
 		if motion == "rightdown":	
 			player.moveRightDown()
 
+		if motion == "stop":
+			pass
+	
 		# screen.blit(player, (0,0))
 		fakeScreen.blit(ground512, (0,0))
+		fakeScreen.blit(playerShadow, (player.rect.x, player.rect.y))
 		allSprites.update()
 		allSprites.draw(fakeScreen)
 		text2 = font1.render(str(int(clock.get_fps())), False,
